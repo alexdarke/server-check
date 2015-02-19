@@ -1,0 +1,63 @@
+#!/bin/bash
+############################################################################
+#   server-check : A basic information gathering script about a server     #
+#                  utilizing sysstat reports. Originally written by        # 
+#                  Sam Sharpe.                                             #
+############################################################################
+
+
+echo "";
+CPUCOUNT=`cat /proc/cpuinfo | grep "physical id" | sort | uniq -c | wc -l`
+if [ $CPUCOUNT -eq 0 ]; then
+   CPUCOUNT=`cat /proc/cpuinfo | grep processor | uniq -c | wc -l`
+fi
+CPUCORES=`cat /proc/cpuinfo | grep "cpu cores" | uniq | awk '{print \$4}'`
+if [ "$CPUCORES" = "" ]; then
+   CPUCORES="1"
+fi
+CPUMODEL=`cat /proc/cpuinfo | grep "model name" | sort | uniq -c | cut -d: -f2`
+
+echo "CPU Installed    : $CPUCOUNT x${CPUMODEL} ($CPUCORES cores per proc)"
+echo -n "Peak CPU Usage   : " ;
+{
+   for file in /var/log/sa/sa??;
+     do
+       sar -f $file | egrep -v "user|^$|Linux|Average|RESTART";
+     done
+} | awk '{printf "%2.2f %%\n",$4}' | sort -n | tail -n1 ;
+echo -n "Avg. CPU Usage   : " ;
+{
+   for file in /var/log/sa/sa??;
+     do
+       sar -f $file | egrep -v "user|^$|Linux|Average|RESTART";
+     done
+} | awk '{SUM+=$4} END {printf "%2.2f %%\n", SUM/NR}'
+echo "";
+ACTUALRAM=`free -m | grep Mem: | awk '{print $2}'`
+REALRAM=$((($ACTUALRAM + 500)/1024))
+echo "Ram Installed    : $REALRAM GB"
+echo -n "Peak RAM Usage   : " ;
+{
+   for file in /var/log/sa/sa??;
+     do
+       sar -r -f $file | egrep -v "used|^$|Linux|Average|RESTART";
+     done
+} | awk '{printf "%2.2f %%\n",100*(($4-$6-$7)/($3+$4))}' | sort -n | tail -n1 ;
+echo -n "Avg. RAM Usage   : " ;
+{
+   for file in /var/log/sa/sa??;
+     do
+       sar -r -f $file | egrep -v "used|^$|Linux|Average|RESTART";
+     done
+} | awk '{SUM+=100*(($4-$6-$7)/($3+$4))} END {printf "%2.2f %%\n",SUM/NR}';
+
+
+echo "";
+echo "Filesystem Usage :";
+df -Pkh | egrep -v "none|tmpfs|Mounted" | awk '{printf "   %-20.20s %-10.10s %s used\n",$6,$2,$5}'
+echo "";
+echo "Red Hat Version  : `cat /etc/redhat-release | sed -e 's/Red Hat Enterprise Linux/RHEL/g' -e 's/release //g'`"
+echo "PHP Version      : `php -v | grep cli | awk '{print $2}'`"
+echo "MySQL Version    : `/usr/libexec/mysqld -V 2>/dev/null | awk '{print $3}'`"
+echo "";
+
