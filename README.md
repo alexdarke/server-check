@@ -15,3 +15,4 @@ Others may be added at a future date.
 
 Usage: /path/to/binary/server-check
 
+![Alt text](screenshot/servercheckSS.png?raw=true "Example usage")
