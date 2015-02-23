@@ -16,9 +16,9 @@ elif [ -f /etc/redhat-release ] ; then
 		echo "$(tput setaf 1)The package sysstat is required. Please install and allow to run/gather data before invoking again."; 
                 tput sgr0; exit 1;
 		fi
-elif [ -f /etc/os-release ] ; then
-	echo "$(tput setaf 1)To operate this under CoreOS, please install and run it from inside of 'toolbox'";
-                tput sgr0; exit 1;
+#elif [ -f /etc/os-release ] ; then
+#	echo "$(tput setaf 1)To operate this under CoreOS, please install and run it from inside of 'toolbox'";
+#                tput sgr0; exit 1;
 else
 	echo "$(tput setaf 1)The package sysstat is required. Please install and allow to run/gather data before invoking again."; exit 1; tput sgr0;
 fi
