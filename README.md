@@ -5,3 +5,7 @@ it aims to provide average memory and cpu usage for a device as well as other
 relevant details about the server.
 
 Originally written by Sam Sharpe. Much thanks to him for starting the process.
+
+Currently supports Redhat variants (ES, CentOS, Fedora) and Debian/Ubuntu.
+
+Others may be added at a future date.
