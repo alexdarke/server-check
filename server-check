@@ -9,12 +9,12 @@
 if [ -f /etc/debian_version ] ; then
 	if ! dpkg --get-selections | grep sysstat >/dev/null 2>/dev/null; then 
 		echo "$(tput setaf 1)The package sysstat is required. Please install and allow to run/gather data before invoking again."; 
-		exit 1; tput sgr0;
+		tput sgr0; exit 1;
 		fi
 elif [ -f /etc/redhat-release ] ; then
 	if ! rpm -qa | grep sysstat >/dev/null 2>/dev/null; then
 		echo "$(tput setaf 1)The package sysstat is required. Please install and allow to run/gather data before invoking again."; 
-                exit 1; tput sgr0;
+                tput sgr0; exit 1;
 		fi
 else
 	echo "$(tput setaf 1)The package sysstat is required. Please install and allow to run/gather data before invoking again."; exit 1; tput sgr0;
