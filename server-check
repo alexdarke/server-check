@@ -34,10 +34,17 @@ fi
 } | awk '{printf "%2.2f %%\n",$4}' | sort -n | tail -n1 ;
 echo -n "Avg. CPU Usage   : " ;
 {
+if [ -f /etc/debian_version ] ; then
+   for file in /var/log/sysstat/sa??;
+     do
+       sar -f $file | egrep -v "user|^$|Linux|Average|RESTART";
+     done
+elif [ -f /etc/redhat-release ] ; then
    for file in /var/log/sa/sa??;
      do
        sar -f $file | egrep -v "user|^$|Linux|Average|RESTART";
      done
+fi
 } | awk '{SUM+=$4} END {printf "%2.2f %%\n", SUM/NR}'
 echo "";
 ACTUALRAM=`free -m | grep Mem: | awk '{print $2}'`
