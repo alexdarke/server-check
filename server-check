@@ -55,17 +55,31 @@ fi
 echo "Ram Installed    : $REALRAM GB"
 echo -n "Peak RAM Usage   : " ;
 {
+if [ -f /etc/debian_version ] ; then
+   for file in /var/log/sysstat/sa??;
+     do
+       sar -r -f $file | egrep -v "used|^$|Linux|Average|RESTART";
+     done
+elif [ -f /etc/redhat-release ] ; then
    for file in /var/log/sa/sa??;
      do
        sar -r -f $file | egrep -v "used|^$|Linux|Average|RESTART";
      done
+fi
 } | awk '{printf "%2.2f %%\n",100*(($4-$6-$7)/($3+$4))}' | sort -n | tail -n1 ;
 echo -n "Avg. RAM Usage   : " ;
 {
+if [ -f /etc/debian_version ] ; then
+   for file in /var/log/sysstat/sa??;
+     do
+       sar -r -f $file | egrep -v "used|^$|Linux|Average|RESTART";
+     done
+elif [ -f /etc/redhat-release ] ; then
    for file in /var/log/sa/sa??;
      do
        sar -r -f $file | egrep -v "used|^$|Linux|Average|RESTART";
      done
+fi
 } | awk '{SUM+=100*(($4-$6-$7)/($3+$4))} END {printf "%2.2f %%\n",SUM/NR}';
 
 
