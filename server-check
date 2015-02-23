@@ -89,7 +89,7 @@ df -Pkh | egrep -v "none|tmpfs|Mounted" | awk '{printf "   %-20.20s %-10.10s %s 
 echo "";
 
 if [ -f /etc/debian_version ] ; then
-	echo "OS Version       : `cat /etc/lsb-release | egrep -e 'DISTRIB_ID|DISTRIB_RELEASE' | awk -F=  '{ print $2 }' | sed ':a;N;$!ba;s/\n/ /g'`";
+	echo "OS Version       : `lsb_release -a 2> /dev/null | grep Description | awk '{print $2,$3,$4}'`";
 elif [ -f /etc/redhat-release ] ; then
 	echo "OS  Version     : `cat /etc/redhat-release | sed -e 's/Red Hat Enterprise Linux/RHEL/g' -e 's/release //g'`";
 else
