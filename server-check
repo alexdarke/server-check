@@ -56,7 +56,16 @@ echo "";
 echo "Filesystem Usage :";
 df -Pkh | egrep -v "none|tmpfs|Mounted" | awk '{printf "   %-20.20s %-10.10s %s used\n",$6,$2,$5}'
 echo "";
-echo "Red Hat Version  : `cat /etc/redhat-release | sed -e 's/Red Hat Enterprise Linux/RHEL/g' -e 's/release //g'`"
+
+if [ -f /etc/debian_version ] ; then
+	echo "OS Version: `cat /etc/lsb-release | egrep -e 'DISTRIB_ID|DISTRIB_RELEASE' | awk -F=  '{ print $2 }' | sed ':a;N;$!ba;s/\n/ /g'`";
+elif [ -f /etc/redhat-release ] ; then
+	echo "OS  Version: `cat /etc/redhat-release | sed -e 's/Red Hat Enterprise Linux/RHEL/g' -e 's/release //g'`";
+else
+	echo "OS Version: Unknown";
+
+fi
+
 echo "PHP Version      : `php -v | grep cli | awk '{print $2}'`"
 echo "MySQL Version    : `/usr/libexec/mysqld -V 2>/dev/null | awk '{print $3}'`"
 echo "";
