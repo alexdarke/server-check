@@ -66,6 +66,6 @@ else
 fi
 
 echo "PHP Version      : `php -v | grep cli | awk '{print $2}'`"
-echo "MySQL Version    : `/usr/libexec/mysqld -V 2>/dev/null | awk '{print $3}'`"
+echo "MySQL Version    : `mysqld -V 2>/dev/null | awk '{print $3}'`"
 echo "";
 
