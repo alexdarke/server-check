@@ -35,6 +35,9 @@ echo -n "Avg. CPU Usage   : " ;
 echo "";
 ACTUALRAM=`free -m | grep Mem: | awk '{print $2}'`
 REALRAM=$((($ACTUALRAM + 500)/1024))
+if [ $REALRAM = "0" ] ; then
+	REALRAM="Under 1GB";
+fi
 echo "Ram Installed    : $REALRAM GB"
 echo -n "Peak RAM Usage   : " ;
 {
