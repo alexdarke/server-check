@@ -91,7 +91,7 @@ echo "";
 if [ -f /etc/debian_version ] ; then
 	echo "OS Version       : `lsb_release -a 2> /dev/null | grep Description | awk '{print $2,$3,$4}'`";
 elif [ -f /etc/redhat-release ] ; then
-	echo "OS  Version     : `cat /etc/redhat-release | sed -e 's/Red Hat Enterprise Linux/RHEL/g' -e 's/release //g'`";
+	echo "OS Version       : `cat /etc/redhat-release | sed -e 's/Red Hat Enterprise Linux/RHEL/g' -e 's/release //g'`";
 else
 	echo "OS Version       : Unknown";
 fi
