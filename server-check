@@ -20,10 +20,17 @@ CPUMODEL=`cat /proc/cpuinfo | grep "model name" | sort | uniq -c | cut -d: -f2`
 echo "CPU Installed    : $CPUCOUNT x${CPUMODEL} ($CPUCORES cores per proc)"
 echo -n "Peak CPU Usage   : " ;
 {
+if [ -f /etc/debian_version ] ; then
+   for file in /var/log/sysstat/sa??;
+     do
+       sar -f $file | egrep -v "user|^$|Linux|Average|RESTART";
+     done
+elif [ -f /etc/redhat-release ] ; then
    for file in /var/log/sa/sa??;
      do
        sar -f $file | egrep -v "user|^$|Linux|Average|RESTART";
      done
+fi
 } | awk '{printf "%2.2f %%\n",$4}' | sort -n | tail -n1 ;
 echo -n "Avg. CPU Usage   : " ;
 {
