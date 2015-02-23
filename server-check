@@ -1,10 +1,23 @@
 #!/bin/bash
 ############################################################################
 #   server-check : A basic information gathering script about a server     #
-#                  utilizing sysstat reports. Originally written by        # 
-#                  Sam Sharpe.                                             #
+#                  utilizing sysstat reports. 	                           # 
+#                                                                          # 
+#      Requires  : sysstat                                                 #
 ############################################################################
 
+if [ -f /etc/debian_version ] ; then
+	if ! dpkg --get-selections | grep sysstat >/dev/null 2>/dev/null; then 
+		echo "$(tput setaf 1)The package sysstat is required. Please install and allow to run/gather data before invoking again."; 
+		exit 1; tput sgr0;
+	fi
+elif [ -f /etc/redhat-release ] ; then
+	if ! rpm -qa | grep sysstat >/dev/null 2>/dev/null; then
+		echo "$(tput setaf 1)The package sysstat is required. Please install and allow to run/gather data before invoking again."; 
+                exit 1; tput sgr0;
+else
+	echo "$(tput setaf 1)The package sysstat is required. Please install and allow to run/gather data before invoking again."; exit 1; tput sgr0;
+fi
 
 echo "";
 CPUCOUNT=`cat /proc/cpuinfo | grep "physical id" | sort | uniq -c | wc -l`
