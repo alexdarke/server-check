@@ -130,7 +130,7 @@ elif [ -f /etc/redhat-release ] ; then
         if [[ -n $(/usr/libexec/mysqld -V 2>/dev/null | awk '{print $3}') ]]; then 
                 echo "MySQL Version    : `/usr/libexec/mysqld -V 2>/dev/null | awk '{print $3}'`"; 
         else 
-                echo "No MySQL installed"; 
+                echo "MySQL Version    : No MySQL installed"; 
         fi
 fi
 echo "";
