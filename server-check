@@ -114,7 +114,8 @@ else
 	echo "OS Version       : Unknown";
 fi
 
-echo "PHP Version      : `php -v | grep cli | awk '{print $2}'`"
+echo "PHP Version      : `if ! php -v | grep cli | awk '{print $2}' 2> /dev/null; then echo "No PHP installed"; fi
+#echo "PHP Version      : `php -v | grep cli | awk '{print $2}'`"
 
 if [ -f /etc/debian_version ] ; then
 	echo "MySQL Version    : `mysqld -V 2>/dev/null | awk '{print $3}'`"
