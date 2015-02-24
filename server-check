@@ -121,11 +121,17 @@ else
 fi
 
 if [ -f /etc/debian_version ] ; then
-	echo "MySQL Version    : `mysqld -V 2>/dev/null | awk '{print $3}'`"
+	if [[ -n $(mysqld -V 2>/dev/null | awk '{print $3}') ]]; then 
+		echo "MySQL Version    : `mysqld -V 2>/dev/null | awk '{print $3}'`"; 
+	else 
+		echo "No MySQL installed"; 
+	fi
 elif [ -f /etc/redhat-release ] ; then
-	echo "MySQL Version    : `/usr/libexec/mysqld -V 2>/dev/null | awk '{print $3}'`"
-else
-	echo "MySQL Version    : Unknown/Not Found";
+        if [[ -n $(/usr/libexec/mysqld -V 2>/dev/null | awk '{print $3}') ]]; then 
+                echo "MySQL Version    : `/usr/libexec/mysqld -V 2>/dev/null | awk '{print $3}'`"; 
+        else 
+                echo "No MySQL installed"; 
+        fi
 fi
 echo "";
 
