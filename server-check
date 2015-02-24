@@ -16,10 +16,10 @@ elif [ -f /etc/redhat-release ] ; then
 		echo "$(tput setaf 1)The package sysstat is required. Please install and allow to run/gather data before invoking again."; 
                 tput sgr0; exit 1;
 		fi
-#elif [ -f /etc/os-release ] ; then
-#	echo "$(tput setaf 1)To operate this under CoreOS, please install and run it from inside of 'toolbox'";
-#                tput sgr0; exit 1;
-#
+elif [ -f /etc/os-release ] ; then
+	echo "$(tput setaf 1)To operate this under CoreOS, please install and run it from inside of 'toolbox'";
+                tput sgr0; exit 1;
+
 else
 	echo "$(tput setaf 1)The package sysstat is required. Please install and allow to run/gather data before invoking again."; exit 1; tput sgr0;
 fi
@@ -103,7 +103,7 @@ fi
 
 echo "";
 echo "Filesystem Usage :";
-df -Pkh | egrep -v "none|tmpfs|Mounted" | awk '{printf "   %-20.20s %-10.10s %s used\n",$6,$2,$5}'
+df -Pkh 2> /dev/null | egrep -v "none|tmpfs|Mounted" | awk '{printf "   %-20.20s %-10.10s %s used\n",$6,$2,$5}'
 echo "";
 
 if [ -f /etc/debian_version ] ; then
