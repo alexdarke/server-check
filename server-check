@@ -99,42 +99,39 @@ function cpu-stats () {
 
 cpu-stats;
 
-echo "";
-ACTUALRAM=`free -m | grep Mem: | awk '{print $2}'`
-REALRAM=$((($ACTUALRAM + 500)/1024))
-if [ $REALRAM = "0" ] ; then
-	REALRAM="Under 1GB";
-fi
-echo "Ram Installed    : $REALRAM GB"
-echo -n "Peak RAM Usage   : " ;
-{
-if [ -f /etc/debian_version ] ; then
-   for file in /var/log/sysstat/sa??;
-     do
-       sar -r -f $file | egrep -v "used|^$|Linux|Average|RESTART";
-     done
-elif [ -f /etc/redhat-release ] ; then
-   for file in /var/log/sa/sa??;
-     do
-       sar -r -f $file | egrep -v "used|^$|Linux|Average|RESTART";
-     done
-fi
-} | awk '{printf "%2.2f %%\n",100*(($4-$6-$7)/($3+$4))}' | sort -n | tail -n1 ;
-echo -n "Avg. RAM Usage   : " ;
-{
-if [ -f /etc/debian_version ] ; then
-   for file in /var/log/sysstat/sa??;
-     do
-       sar -r -f $file | egrep -v "used|^$|Linux|Average|RESTART";
-     done
-elif [ -f /etc/redhat-release ] ; then
-   for file in /var/log/sa/sa??;
-     do
-       sar -r -f $file | egrep -v "used|^$|Linux|Average|RESTART";
-     done
-fi
-} | awk '{SUM+=100*(($4-$6-$7)/($3+$4))} END {printf "%2.2f %%\n",SUM/NR}';
+function ram-stats () {
 
+  # RAM stats will not run on CoreOS
+  if [ "$OS_TYPE" == "coreos" ]; then
+    return 0
+  fi
+
+  echo "";
+
+  ACTUALRAM=`free -m | grep Mem: | awk '{print $2}'`;
+  REALRAM=$((($ACTUALRAM + 500)/1024));
+  if [ $REALRAM = "0" ] ; then
+    REALRAM="Under 1";
+  fi
+  echo "RAM Installed    : $REALRAM GB"
+
+  echo -n "Peak RAM Usage   : " ;
+  {
+    for file in ${SA_DIR}/sa??; do
+      sar -r -f $file | egrep -v "used|^$|Linux|Average|RESTART";
+    done
+  } | awk '{printf "%2.2f %%\n",100*(($4-$6-$7)/($3+$4))}' | sort -n | tail -n1 ;
+
+  echo -n "Avg. RAM Usage   : " ;
+  {
+    for file in ${SA_DIR}/sa??; do
+      sar -r -f $file | egrep -v "used|^$|Linux|Average|RESTART";
+    done
+  } | awk '{SUM+=100*(($4-$6-$7)/($3+$4))} END {printf "%2.2f %%\n",SUM/NR}';
+
+}
+
+ram-stats;
 
 echo "";
 echo "Filesystem Usage :";
