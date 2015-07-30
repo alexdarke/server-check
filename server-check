@@ -1,137 +1,143 @@
 #!/bin/bash
 ############################################################################
 #   server-check : A basic information gathering script about a server     #
-#                  utilizing sysstat reports. 	                           # 
-#                                                                          # 
+#                  utilizing sysstat reports.                              #
+#                                                                          #
 #      Requires  : sysstat                                                 #
 ############################################################################
 
-if [ -f /etc/debian_version ] ; then
-	if ! dpkg --get-selections | grep sysstat >/dev/null 2>/dev/null; then 
-		echo "$(tput setaf 1)The package sysstat is required. Please install and allow to run/gather data before invoking again."; 
-		tput sgr0; exit 1;
-		fi
-elif [ -f /etc/redhat-release ] ; then
-	if ! rpm -qa | grep sysstat >/dev/null 2>/dev/null; then
-		echo "$(tput setaf 1)The package sysstat is required. Please install and allow to run/gather data before invoking again."; 
-                tput sgr0; exit 1;
-		fi
-elif [ -f /etc/os-release ] ; then
-	echo "$(tput setaf 1)To operate this under CoreOS, please install and run it from inside of 'toolbox'";
-                tput sgr0; exit 1;
+function die () {
+  echo "$(tput setaf 1)Error: ${1}"
+	tput sgr0;
+  exit 1
+}
 
-else
-	echo "$(tput setaf 1)The package sysstat is required. Please install and allow to run/gather data before invoking again."; exit 1; tput sgr0;
-fi
+function newline () {
+	echo ""
+}
 
-echo "";
-CPUCOUNT=`cat /proc/cpuinfo | grep "physical id" | sort | uniq -c | wc -l`
-if [ $CPUCOUNT -eq 0 ]; then
-   CPUCOUNT=`cat /proc/cpuinfo | grep processor | uniq -c | wc -l`
-fi
-CPUCORES=`cat /proc/cpuinfo | grep "cpu cores" | uniq | awk '{print \$4}'`
-if [ "$CPUCORES" = "" ]; then
-   CPUCORES="1"
-fi
-CPUMODEL=`cat /proc/cpuinfo | grep "model name" | sort | uniq -c | cut -d: -f2`
+function check-prereqs () {
 
-echo "CPU Installed    : $CPUCOUNT x${CPUMODEL} ($CPUCORES cores per proc)"
-echo -n "Peak CPU Usage   : " ;
-{
-if [ -f /etc/debian_version ] ; then
-   for file in /var/log/sysstat/sa??;
-     do
-       sar -f $file | egrep -v "user|^$|Linux|Average|RESTART";
-     done
-elif [ -f /etc/redhat-release ] ; then
-   for file in /var/log/sa/sa??;
-     do
-       sar -f $file | egrep -v "user|^$|Linux|Average|RESTART";
-     done
-fi
-} | awk '{printf "%2.2f %%\n",$4}' | sort -n | tail -n1 ;
-echo -n "Avg. CPU Usage   : " ;
-{
-if [ -f /etc/debian_version ] ; then
-   for file in /var/log/sysstat/sa??;
-     do
-       sar -f $file | egrep -v "user|^$|Linux|Average|RESTART";
-     done
-elif [ -f /etc/redhat-release ] ; then
-   for file in /var/log/sa/sa??;
-     do
-       sar -f $file | egrep -v "user|^$|Linux|Average|RESTART";
-     done
-fi
-} | awk '{SUM+=$4} END {printf "%2.2f %%\n", SUM/NR}'
-echo "";
-ACTUALRAM=`free -m | grep Mem: | awk '{print $2}'`
-REALRAM=$((($ACTUALRAM + 500)/1024))
-if [ $REALRAM = "0" ] ; then
-	REALRAM="Under 1GB";
-fi
-echo "Ram Installed    : $REALRAM GB"
-echo -n "Peak RAM Usage   : " ;
-{
-if [ -f /etc/debian_version ] ; then
-   for file in /var/log/sysstat/sa??;
-     do
-       sar -r -f $file | egrep -v "used|^$|Linux|Average|RESTART";
-     done
-elif [ -f /etc/redhat-release ] ; then
-   for file in /var/log/sa/sa??;
-     do
-       sar -r -f $file | egrep -v "used|^$|Linux|Average|RESTART";
-     done
-fi
-} | awk '{printf "%2.2f %%\n",100*(($4-$6-$7)/($3+$4))}' | sort -n | tail -n1 ;
-echo -n "Avg. RAM Usage   : " ;
-{
-if [ -f /etc/debian_version ] ; then
-   for file in /var/log/sysstat/sa??;
-     do
-       sar -r -f $file | egrep -v "used|^$|Linux|Average|RESTART";
-     done
-elif [ -f /etc/redhat-release ] ; then
-   for file in /var/log/sa/sa??;
-     do
-       sar -r -f $file | egrep -v "used|^$|Linux|Average|RESTART";
-     done
-fi
-} | awk '{SUM+=100*(($4-$6-$7)/($3+$4))} END {printf "%2.2f %%\n",SUM/NR}';
+  OS_TYPE="unknown";
+  OS_VERSION="unknown"
+  PHP_VERSION="Not Detected"
+  MYSQL_VERSION="Not Detected"
 
+  if [ -f /etc/debian_version ] ; then
+    OS_TYPE="debian";
+    OS_VERSION="`lsb_release -a 2> /dev/null | grep Description | awk '{print $2,$3,$4}'`"
+    SA_DIR="/var/log/sysstat";
+    OS_MYSQL=`mysqld -V 2>/dev/null | awk '{print $3}'`
+    if ! dpkg --get-selections | grep sysstat >/dev/null 2>/dev/null; then
+      die "The package sysstat is required. Please install and allow to run/gather data before invoking again.";
+    fi
+	elif [ -f /etc/redhat-release ] ; then
+    OS_TYPE="redhat";
+    OS_VERSION="`cat /etc/redhat-release | sed -e 's/Red Hat Enterprise Linux/RHEL/g' -e 's/release //g'`"
+    SA_DIR="/var/log/sa";
+    OS_MYSQL=`/usr/libexec/mysqld -V 2>/dev/null | awk '{print $3}'`
+    if ! rpm -qa | grep sysstat >/dev/null 2>/dev/null; then
+      die "The package sysstat is required. Please install and allow to run/gather data before invoking again.";
+    fi
+  elif [ -f /etc/os-release ]; then
+    OS_TYPE="coreos";
+    die "To operate this under CoreOS, please install and run it from inside of 'toolbox'";
+  fi
 
-echo "";
-echo "Filesystem Usage :";
-df -Pkh 2> /dev/null | egrep -v "none|tmpfs|Mounted" | awk '{printf "   %-20.20s %-10.10s %s used\n",$6,$2,$5}'
-echo "";
+  if [ -f /usr/bin/php ] ; then
+    PHP_VERSION=`php -v | grep cli | awk '{print $2}'`;
+  fi
 
-if [ -f /etc/debian_version ] ; then
-	echo "OS Version       : `lsb_release -a 2> /dev/null | grep Description | awk '{print $2,$3,$4}'`";
-elif [ -f /etc/redhat-release ] ; then
-	echo "OS Version       : `cat /etc/redhat-release | sed -e 's/Red Hat Enterprise Linux/RHEL/g' -e 's/release //g'`";
-else
-	echo "OS Version       : Unknown";
-fi
+  if [ -n "${OS_MYSQL}" ]; then
+    MYSQL_VERSION=${OS_MYSQL};
+  fi
 
-if [ -f /usr/bin/php ] ; then
-	echo "PHP Version      : `php -v | grep cli | awk '{print $2}'`"
-else 
-	echo "PHP Version      : No PHP installed";
-fi
+  echo "OS Version       : ${OS_VERSION}";
+  echo "PHP Version      : ${PHP_VERSION}";
+  echo "MySQL Version    : ${MYSQL_VERSION}";
 
-if [ -f /etc/debian_version ] ; then
-	if [[ -n $(mysqld -V 2>/dev/null | awk '{print $3}') ]]; then 
-		echo "MySQL Version    : `mysqld -V 2>/dev/null | awk '{print $3}'`"; 
-	else 
-		echo "MySQL Version    : No MySQL installed"; 
-	fi
-elif [ -f /etc/redhat-release ] ; then
-        if [[ -n $(/usr/libexec/mysqld -V 2>/dev/null | awk '{print $3}') ]]; then 
-                echo "MySQL Version    : `/usr/libexec/mysqld -V 2>/dev/null | awk '{print $3}'`"; 
-        else 
-                echo "MySQL Version    : No MySQL installed"; 
-        fi
-fi
-echo "";
+  if [ "$OS_TYPE" == "unknown" ]; then
+    die "This is not a supported Operating System - script requires RedHat derivative, Debian derivative or CoreOS";
+  fi
+}
 
+function cpu-stats () {
+
+  # CPU stats will not run on CoreOS
+  if [ "$OS_TYPE" == "coreos" ]; then
+    return 0
+  fi
+
+  CPUCOUNT=`cat /proc/cpuinfo | grep "physical id" | sort | uniq -c | wc -l`;
+  if [ $CPUCOUNT -eq 0 ]; then
+    CPUCOUNT=`cat /proc/cpuinfo | grep processor | uniq -c | wc -l`;
+  fi
+
+  CPUCORES=`cat /proc/cpuinfo | grep "cpu cores" | uniq | awk '{print \$4}'`;
+  if [ "$CPUCORES" = "" ]; then
+    CPUCORES="1";
+  fi
+
+  CPUMODEL=`cat /proc/cpuinfo | grep "model name" | sort | uniq -c | cut -d: -f2`;
+
+  echo "CPU Installed    : $CPUCOUNT x${CPUMODEL} ($CPUCORES cores per proc)";
+
+  echo -n "Peak CPU Usage   : " ;
+  {
+    for file in ${SA_DIR}/sa??; do
+      sar -f $file | egrep -v "user|^$|Linux|Average|RESTART";
+    done
+  } | awk '{printf "%2.2f %%\n",$4}' | sort -n | tail -n1 ;
+
+  echo -n "Avg. CPU Usage   : " ;
+  {
+    for file in ${SA_DIR}/sa??; do
+      sar -f $file | egrep -v "user|^$|Linux|Average|RESTART";
+    done
+  } | awk '{SUM+=$4} END {printf "%2.2f %%\n", SUM/NR}'
+}
+
+function ram-stats () {
+
+  # RAM stats will not run on CoreOS
+  if [ "$OS_TYPE" == "coreos" ]; then
+    return 0
+  fi
+
+  ACTUALRAM=`free -m | grep Mem: | awk '{print $2}'`;
+  REALRAM=$((($ACTUALRAM + 500)/1024));
+  if [ $REALRAM = "0" ] ; then
+    REALRAM="Under 1";
+  fi
+  echo "RAM Installed    : $REALRAM GB"
+
+  echo -n "Peak RAM Usage   : " ;
+  {
+    for file in ${SA_DIR}/sa??; do
+      sar -r -f $file | egrep -v "used|^$|Linux|Average|RESTART";
+    done
+  } | awk '{printf "%2.2f %%\n",100*(($4-$6-$7)/($3+$4))}' | sort -n | tail -n1 ;
+
+  echo -n "Avg. RAM Usage   : " ;
+  {
+    for file in ${SA_DIR}/sa??; do
+      sar -r -f $file | egrep -v "used|^$|Linux|Average|RESTART";
+    done
+  } | awk '{SUM+=100*(($4-$6-$7)/($3+$4))} END {printf "%2.2f %%\n",SUM/NR}';
+
+}
+
+function disk-stats () {
+  echo "Filesystem Usage :";
+  df -Pkh 2> /dev/null | egrep -v "none|tmpfs|Mounted" | awk '{printf "   %-20.20s %-10.10s %s used\n",$6,$2,$5}';
+}
+
+newline;
+check-prereqs;
+newline;
+cpu-stats;
+newline;
+ram-stats;
+newline;
+disk-stats;
+newline;
