@@ -1,28 +1,41 @@
 #!/bin/bash
 ############################################################################
 #   server-check : A basic information gathering script about a server     #
-#                  utilizing sysstat reports. 	                           # 
-#                                                                          # 
+#                  utilizing sysstat reports.                              #
+#                                                                          #
 #      Requires  : sysstat                                                 #
 ############################################################################
 
-if [ -f /etc/debian_version ] ; then
-	if ! dpkg --get-selections | grep sysstat >/dev/null 2>/dev/null; then 
-		echo "$(tput setaf 1)The package sysstat is required. Please install and allow to run/gather data before invoking again."; 
-		tput sgr0; exit 1;
-		fi
-elif [ -f /etc/redhat-release ] ; then
-	if ! rpm -qa | grep sysstat >/dev/null 2>/dev/null; then
-		echo "$(tput setaf 1)The package sysstat is required. Please install and allow to run/gather data before invoking again."; 
-                tput sgr0; exit 1;
-		fi
-elif [ -f /etc/os-release ] ; then
-	echo "$(tput setaf 1)To operate this under CoreOS, please install and run it from inside of 'toolbox'";
-                tput sgr0; exit 1;
+function die () {
+  echo "$(tput setaf 1)Error: ${1}"
+  exit 1
+}
 
-else
-	echo "$(tput setaf 1)The package sysstat is required. Please install and allow to run/gather data before invoking again."; exit 1; tput sgr0;
-fi
+function check-prereqs () {
+
+  OS_VERSION="unknown"
+
+  if [ -f /etc/debian_version ] ; then
+    OS_VERSION="debian"
+    if ! dpkg --get-selections | grep sysstat >/dev/null 2>/dev/null; then
+      die "The package sysstat is required. Please install and allow to run/gather data before invoking again.";
+    fi
+	elif [ -f /etc/redhat-release ] ; then
+    OS_VERSION="redhat"
+    if ! rpm -qa | grep sysstat >/dev/null 2>/dev/null; then
+      die "The package sysstat is required. Please install and allow to run/gather data before invoking again.";
+    fi
+  elif [ -f /etc/os-release ]; then
+    OS_VERSION="coreos"
+    die "To operate this under CoreOS, please install and run it from inside of 'toolbox'";
+  fi
+
+  if [ "$OS_VERSION" == "unknown" ]; then
+    die "This is not a supported Operating System - script requires RedHat derivative, Debian derivative or CoreOS"
+  fi
+}
+
+check-prereqs
 
 echo "";
 CPUCOUNT=`cat /proc/cpuinfo | grep "physical id" | sort | uniq -c | wc -l`
@@ -116,22 +129,21 @@ fi
 
 if [ -f /usr/bin/php ] ; then
 	echo "PHP Version      : `php -v | grep cli | awk '{print $2}'`"
-else 
+else
 	echo "PHP Version      : No PHP installed";
 fi
 
 if [ -f /etc/debian_version ] ; then
-	if [[ -n $(mysqld -V 2>/dev/null | awk '{print $3}') ]]; then 
-		echo "MySQL Version    : `mysqld -V 2>/dev/null | awk '{print $3}'`"; 
-	else 
-		echo "MySQL Version    : No MySQL installed"; 
+	if [[ -n $(mysqld -V 2>/dev/null | awk '{print $3}') ]]; then
+		echo "MySQL Version    : `mysqld -V 2>/dev/null | awk '{print $3}'`";
+	else
+		echo "MySQL Version    : No MySQL installed";
 	fi
 elif [ -f /etc/redhat-release ] ; then
-        if [[ -n $(/usr/libexec/mysqld -V 2>/dev/null | awk '{print $3}') ]]; then 
-                echo "MySQL Version    : `/usr/libexec/mysqld -V 2>/dev/null | awk '{print $3}'`"; 
-        else 
-                echo "MySQL Version    : No MySQL installed"; 
+        if [[ -n $(/usr/libexec/mysqld -V 2>/dev/null | awk '{print $3}') ]]; then
+                echo "MySQL Version    : `/usr/libexec/mysqld -V 2>/dev/null | awk '{print $3}'`";
+        else
+                echo "MySQL Version    : No MySQL installed";
         fi
 fi
 echo "";
-
