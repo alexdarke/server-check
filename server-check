@@ -14,26 +14,45 @@ function die () {
 
 function check-prereqs () {
 
-  OS_VERSION="unknown";
+  OS_TYPE="unknown";
+  OS_VERSION="unknown"
+  PHP_VERSION="Not Detected"
+  MYSQL_VERSION="Not Detected"
 
   if [ -f /etc/debian_version ] ; then
-    OS_VERSION="debian";
-		SA_DIR="/var/log/sysstat"
+    OS_TYPE="debian";
+    OS_VERSION="`lsb_release -a 2> /dev/null | grep Description | awk '{print $2,$3,$4}'`"
+    SA_DIR="/var/log/sysstat";
+    OS_MYSQL=`mysqld -V 2>/dev/null | awk '{print $3}'`
     if ! dpkg --get-selections | grep sysstat >/dev/null 2>/dev/null; then
       die "The package sysstat is required. Please install and allow to run/gather data before invoking again.";
     fi
 	elif [ -f /etc/redhat-release ] ; then
-    OS_VERSION="redhat";
-		SA_DIR="/var/log/sa"
+    OS_TYPE="redhat";
+    OS_VERSION="`cat /etc/redhat-release | sed -e 's/Red Hat Enterprise Linux/RHEL/g' -e 's/release //g'`"
+    SA_DIR="/var/log/sa";
+    OS_MYSQL=`/usr/libexec/mysqld -V 2>/dev/null | awk '{print $3}'`
     if ! rpm -qa | grep sysstat >/dev/null 2>/dev/null; then
       die "The package sysstat is required. Please install and allow to run/gather data before invoking again.";
     fi
   elif [ -f /etc/os-release ]; then
-    OS_VERSION="coreos";
+    OS_TYPE="coreos";
     die "To operate this under CoreOS, please install and run it from inside of 'toolbox'";
   fi
 
-  if [ "$OS_VERSION" == "unknown" ]; then
+  if [ -f /usr/bin/php ] ; then
+    PHP_VERSION=`php -v | grep cli | awk '{print $2}'`;
+  fi
+
+  if [ -n "${OS_MYSQL}" ]; then
+		MYSQL_VERSION=${OS_MYSQL};
+  fi
+
+  echo "OS Version       : ${OS_VERSION}";
+  echo "PHP Version      : ${PHP_VERSION}";
+  echo "MySQL Version    : ${MYSQL_VERSION}";
+
+  if [ "$OS_TYPE" == "unknown" ]; then
     die "This is not a supported Operating System - script requires RedHat derivative, Debian derivative or CoreOS";
   fi
 }
@@ -43,7 +62,7 @@ check-prereqs;
 function cpu-stats () {
 
 	# CPU stats will not run on CoreOS
-	if [ "$OS_VERSION" == "coreos" ]; then
+	if [ "$OS_TYPE" == "coreos" ]; then
 		return 0
 	fi
 
@@ -62,7 +81,6 @@ function cpu-stats () {
 	CPUMODEL=`cat /proc/cpuinfo | grep "model name" | sort | uniq -c | cut -d: -f2`;
 
   echo "CPU Installed    : $CPUCOUNT x${CPUMODEL} ($CPUCORES cores per proc)";
-
 
 	echo -n "Peak CPU Usage   : " ;
 	{
@@ -123,31 +141,4 @@ echo "Filesystem Usage :";
 df -Pkh 2> /dev/null | egrep -v "none|tmpfs|Mounted" | awk '{printf "   %-20.20s %-10.10s %s used\n",$6,$2,$5}'
 echo "";
 
-if [ -f /etc/debian_version ] ; then
-	echo "OS Version       : `lsb_release -a 2> /dev/null | grep Description | awk '{print $2,$3,$4}'`";
-elif [ -f /etc/redhat-release ] ; then
-	echo "OS Version       : `cat /etc/redhat-release | sed -e 's/Red Hat Enterprise Linux/RHEL/g' -e 's/release //g'`";
-else
-	echo "OS Version       : Unknown";
-fi
-
-if [ -f /usr/bin/php ] ; then
-	echo "PHP Version      : `php -v | grep cli | awk '{print $2}'`"
-else
-	echo "PHP Version      : No PHP installed";
-fi
-
-if [ -f /etc/debian_version ] ; then
-	if [[ -n $(mysqld -V 2>/dev/null | awk '{print $3}') ]]; then
-		echo "MySQL Version    : `mysqld -V 2>/dev/null | awk '{print $3}'`";
-	else
-		echo "MySQL Version    : No MySQL installed";
-	fi
-elif [ -f /etc/redhat-release ] ; then
-        if [[ -n $(/usr/libexec/mysqld -V 2>/dev/null | awk '{print $3}') ]]; then
-                echo "MySQL Version    : `/usr/libexec/mysqld -V 2>/dev/null | awk '{print $3}'`";
-        else
-                echo "MySQL Version    : No MySQL installed";
-        fi
-fi
 echo "";
