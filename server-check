@@ -12,6 +12,10 @@ function die () {
   exit 1
 }
 
+function newline () {
+	echo ""
+}
+
 function check-prereqs () {
 
   OS_TYPE="unknown";
@@ -57,16 +61,12 @@ function check-prereqs () {
   fi
 }
 
-check-prereqs;
-
 function cpu-stats () {
 
 	# CPU stats will not run on CoreOS
 	if [ "$OS_TYPE" == "coreos" ]; then
 		return 0
 	fi
-
-  echo "";
 
 	CPUCOUNT=`cat /proc/cpuinfo | grep "physical id" | sort | uniq -c | wc -l`;
 	if [ $CPUCOUNT -eq 0 ]; then
@@ -97,16 +97,12 @@ function cpu-stats () {
   } | awk '{SUM+=$4} END {printf "%2.2f %%\n", SUM/NR}'
 }
 
-cpu-stats;
-
 function ram-stats () {
 
   # RAM stats will not run on CoreOS
   if [ "$OS_TYPE" == "coreos" ]; then
     return 0
   fi
-
-  echo "";
 
   ACTUALRAM=`free -m | grep Mem: | awk '{print $2}'`;
   REALRAM=$((($ACTUALRAM + 500)/1024));
@@ -131,11 +127,17 @@ function ram-stats () {
 
 }
 
+function disk-stats () {
+  echo "Filesystem Usage :";
+  df -Pkh 2> /dev/null | egrep -v "none|tmpfs|Mounted" | awk '{printf "   %-20.20s %-10.10s %s used\n",$6,$2,$5}';
+}
+
+newline;
+check-prereqs;
+newline;
+cpu-stats;
+newline;
 ram-stats;
-
-echo "";
-echo "Filesystem Usage :";
-df -Pkh 2> /dev/null | egrep -v "none|tmpfs|Mounted" | awk '{printf "   %-20.20s %-10.10s %s used\n",$6,$2,$5}'
-echo "";
-
-echo "";
+newline;
+disk-stats;
+newline;
