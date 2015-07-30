@@ -49,7 +49,7 @@ function check-prereqs () {
   fi
 
   if [ -n "${OS_MYSQL}" ]; then
-		MYSQL_VERSION=${OS_MYSQL};
+    MYSQL_VERSION=${OS_MYSQL};
   fi
 
   echo "OS Version       : ${OS_VERSION}";
@@ -63,37 +63,37 @@ function check-prereqs () {
 
 function cpu-stats () {
 
-	# CPU stats will not run on CoreOS
-	if [ "$OS_TYPE" == "coreos" ]; then
-		return 0
-	fi
+  # CPU stats will not run on CoreOS
+  if [ "$OS_TYPE" == "coreos" ]; then
+    return 0
+  fi
 
-	CPUCOUNT=`cat /proc/cpuinfo | grep "physical id" | sort | uniq -c | wc -l`;
-	if [ $CPUCOUNT -eq 0 ]; then
-	   CPUCOUNT=`cat /proc/cpuinfo | grep processor | uniq -c | wc -l`;
-	fi
+  CPUCOUNT=`cat /proc/cpuinfo | grep "physical id" | sort | uniq -c | wc -l`;
+  if [ $CPUCOUNT -eq 0 ]; then
+    CPUCOUNT=`cat /proc/cpuinfo | grep processor | uniq -c | wc -l`;
+  fi
 
-	CPUCORES=`cat /proc/cpuinfo | grep "cpu cores" | uniq | awk '{print \$4}'`;
-	if [ "$CPUCORES" = "" ]; then
-	   CPUCORES="1";
-	fi
+  CPUCORES=`cat /proc/cpuinfo | grep "cpu cores" | uniq | awk '{print \$4}'`;
+  if [ "$CPUCORES" = "" ]; then
+    CPUCORES="1";
+  fi
 
-	CPUMODEL=`cat /proc/cpuinfo | grep "model name" | sort | uniq -c | cut -d: -f2`;
+  CPUMODEL=`cat /proc/cpuinfo | grep "model name" | sort | uniq -c | cut -d: -f2`;
 
   echo "CPU Installed    : $CPUCOUNT x${CPUMODEL} ($CPUCORES cores per proc)";
 
-	echo -n "Peak CPU Usage   : " ;
-	{
+  echo -n "Peak CPU Usage   : " ;
+  {
     for file in ${SA_DIR}/sa??; do
-       sar -f $file | egrep -v "user|^$|Linux|Average|RESTART";
-     done
+      sar -f $file | egrep -v "user|^$|Linux|Average|RESTART";
+    done
   } | awk '{printf "%2.2f %%\n",$4}' | sort -n | tail -n1 ;
 
-	echo -n "Avg. CPU Usage   : " ;
-	{
+  echo -n "Avg. CPU Usage   : " ;
+  {
     for file in ${SA_DIR}/sa??; do
-       sar -f $file | egrep -v "user|^$|Linux|Average|RESTART";
-     done
+      sar -f $file | egrep -v "user|^$|Linux|Average|RESTART";
+    done
   } | awk '{SUM+=$4} END {printf "%2.2f %%\n", SUM/NR}'
 }
 
