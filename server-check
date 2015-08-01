@@ -82,19 +82,22 @@ function cpu-stats () {
 
   echo "CPU Installed    : $CPUCOUNT x${CPUMODEL} ($CPUCORES cores per proc)";
 
-  echo -n "Peak CPU Usage   : " ;
+  CPUCACHE=`mktemp`
   {
     for file in ${SA_DIR}/sa??; do
       sar -f $file | egrep -v "user|^$|Linux|Average|RESTART";
     done
-  } | awk '{printf "%2.2f %%\n",$4}' | sort -n | tail -n1 ;
+  } > $CPUCACHE
 
-  echo -n "Avg. CPU Usage   : " ;
-  {
-    for file in ${SA_DIR}/sa??; do
-      sar -f $file | egrep -v "user|^$|Linux|Average|RESTART";
-    done
-  } | awk '{SUM+=$4} END {printf "%2.2f %%\n", SUM/NR}'
+  CPUPEAK=$(awk '{printf "%2.2f %%\n",$4}' $CPUCACHE 2>/dev/null | sort -n | tail -n1)
+  if [ "$CPUPEAK" == "" ]; then CPUPEAK="Unknown"; fi
+  echo "Peak CPU Usage   : $CPUPEAK" ;
+
+  CPUAVG=$(awk '{SUM+=$4} END {printf "%2.2f %%\n", SUM/NR}' $CPUCACHE 2>/dev/null)
+  if [ "$CPUAVG" == "" ]; then CPUAVG="Unknown"; fi
+  echo "Avg. CPU Usage   : $CPUAVG" ;
+
+  rm $CPUCACHE
 }
 
 function ram-stats () {
@@ -111,20 +114,22 @@ function ram-stats () {
   fi
   echo "RAM Installed    : $REALRAM GB"
 
-  echo -n "Peak RAM Usage   : " ;
+  RAMCACHE=`mktemp`
   {
     for file in ${SA_DIR}/sa??; do
       sar -r -f $file | egrep -v "used|^$|Linux|Average|RESTART";
     done
-  } | awk '{printf "%2.2f %%\n",100*(($4-$6-$7)/($3+$4))}' | sort -n | tail -n1 ;
+  } > $RAMCACHE
 
-  echo -n "Avg. RAM Usage   : " ;
-  {
-    for file in ${SA_DIR}/sa??; do
-      sar -r -f $file | egrep -v "used|^$|Linux|Average|RESTART";
-    done
-  } | awk '{SUM+=100*(($4-$6-$7)/($3+$4))} END {printf "%2.2f %%\n",SUM/NR}';
+  RAMPEAK=$(awk '{printf "%2.2f %%\n",100*(($4-$6-$7)/($3+$4))}' $RAMCACHE 2>/dev/null| sort -n | tail -n1)
+  if [ "$RAMPEAK" == "" ]; then RAMPEAK="Unknown"; fi
+  echo "Peak RAM Usage   : $RAMPEAK" ;
 
+  RAMAVG=$(awk '{SUM+=100*(($4-$6-$7)/($3+$4))} END {printf "%2.2f %%\n",SUM/NR}' $RAMCACHE 2>/dev/null)
+  if [ "$RAMAVG" == "" ]; then RAMAVG="Unknown"; fi
+  echo "Avg. RAM Usage   : $RAMAVG" ;
+
+  rm $RAMCACHE
 }
 
 function disk-stats () {
