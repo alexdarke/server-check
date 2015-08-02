@@ -89,11 +89,13 @@ function cpu-stats () {
     done
   } > $CPUCACHE
 
-  CPUPEAK=$(awk '{printf "%2.2f %%\n",$4}' $CPUCACHE 2>/dev/null | sort -n | tail -n1)
+  # $3 here refers to %user in the sar output
+  CPUPEAK=$(awk '{printf "%2.2f %%\n",$3}' $CPUCACHE 2>/dev/null | sort -n | tail -n1)
   if [ "$CPUPEAK" == "" ]; then CPUPEAK="Unknown"; fi
   echo "Peak CPU Usage   : $CPUPEAK" ;
 
-  CPUAVG=$(awk '{SUM+=$4} END {printf "%2.2f %%\n", SUM/NR}' $CPUCACHE 2>/dev/null)
+  # $3 here refers to %user in the sar output
+  CPUAVG=$(awk '{SUM+=$3} END {printf "%2.2f %%\n", SUM/NR}' $CPUCACHE 2>/dev/null)
   if [ "$CPUAVG" == "" ]; then CPUAVG="Unknown"; fi
   echo "Avg. CPU Usage   : $CPUAVG" ;
 
@@ -121,11 +123,11 @@ function ram-stats () {
     done
   } > $RAMCACHE
 
-  RAMPEAK=$(awk '{printf "%2.2f %%\n",100*(($4-$6-$7)/($3+$4))}' $RAMCACHE 2>/dev/null| sort -n | tail -n1)
+  RAMPEAK=$(awk '{printf "%2.2f %%\n",100*(($3-$5-$6)/($2+$3))}' $RAMCACHE 2>/dev/null| sort -n | tail -n1)
   if [ "$RAMPEAK" == "" ]; then RAMPEAK="Unknown"; fi
   echo "Peak RAM Usage   : $RAMPEAK" ;
 
-  RAMAVG=$(awk '{SUM+=100*(($4-$6-$7)/($3+$4))} END {printf "%2.2f %%\n",SUM/NR}' $RAMCACHE 2>/dev/null)
+  RAMAVG=$(awk '{SUM+=100*(($3-$5-$6)/($2+$3))} END {printf "%2.2f %%\n",SUM/NR}' $RAMCACHE 2>/dev/null)
   if [ "$RAMAVG" == "" ]; then RAMAVG="Unknown"; fi
   echo "Avg. RAM Usage   : $RAMAVG" ;
 
