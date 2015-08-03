@@ -85,7 +85,7 @@ function cpu-stats () {
   CPUCACHE=`mktemp`
   {
     for file in ${SA_DIR}/sa??; do
-      sar -f $file | egrep -v "user|^$|Linux|Average|RESTART";
+      LC_ALL=en_US.UTF-8 sar -f $file | egrep -v "user|^$|Linux|Average|RESTART";
     done
   } > $CPUCACHE
 
@@ -117,7 +117,7 @@ function ram-stats () {
   RAMCACHE=`mktemp`
   {
     for file in ${SA_DIR}/sa??; do
-      sar -r -f $file | egrep -v "used|^$|Linux|Average|RESTART";
+      LC_ALL=en_US.UTF-8 sar -r -f $file | egrep -v "used|^$|Linux|Average|RESTART";
     done
   } > $RAMCACHE
 
