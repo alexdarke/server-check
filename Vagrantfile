@@ -5,15 +5,15 @@
 VAGRANTFILE_API_VERSION = "2"
 
 if !ENV['VAGRANT_OS']
-  abort("Please set VAGRANT_OS env var to redhat or debian")
+  abort("VAGRANT_OS environment variable not specified. Supported values: 'debian', 'redhat', 'ubuntu'")
 end
 
 if ENV['VAGRANT_OS'].downcase == "redhat"
   box_name = "puppetlabs/centos-7.0-64-nocm"
-elsif ENV['VAGRANT_OS'].downcase == "debian"
+elsif ENV['VAGRANT_OS'].downcase == "debian" || ENV['VAGRANT_OS'].downcase == "ubuntu"
   box_name = "puppetlabs/ubuntu-14.04-64-nocm"
 else
-  abort("Please set VAGRANT_OS env var to redhat or debian")
+  abort("VAGRANT_OS environment variable not specified. Supported values: 'debian', 'redhat', 'ubuntu'")
 end
 
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
