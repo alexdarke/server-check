@@ -18,8 +18,7 @@ Usage: /path/to/binary/server-check
 ![Alt text](screenshot/servercheckSS.png?raw=true "Example usage")
 ![Alt text](screenshot/servercheckSS2.png?raw=true "Example usage")
 
-Plans include modular additions to check other server side configurations via flags.
-Just wanted to get this rolling first and add to it as I go.
+Output is configurable with flags, run `server-check -h` for details
 
 # Testing
 
