@@ -18,6 +18,8 @@ function newline () {
 
 function check-prereqs () {
 
+  newline;
+
   OS_TYPE="unknown";
   OS_VERSION="unknown"
   PHP_VERSION="Not Detected"
@@ -28,16 +30,20 @@ function check-prereqs () {
     OS_VERSION="`lsb_release -a 2> /dev/null | grep Description | awk '{print $2,$3,$4}'`"
     SA_DIR="/var/log/sysstat";
     OS_MYSQL=`mysqld -V 2>/dev/null | awk '{print $3}'`
-    if ! dpkg --get-selections | grep sysstat >/dev/null 2>/dev/null; then
-      die "The package sysstat is required. Please install and allow to run/gather data before invoking again.";
+    if [ "$CPUSTATS" == "1" -o "$RAMSTATS" == 1 ]; then
+      if ! dpkg --get-selections | grep sysstat >/dev/null 2>/dev/null; then
+        die "The package sysstat is required. Please install and allow to run/gather data before invoking again.";
+      fi
     fi
 	elif [ -f /etc/redhat-release ] ; then
     OS_TYPE="redhat";
     OS_VERSION="`cat /etc/redhat-release | sed -e 's/Red Hat Enterprise Linux/RHEL/g' -e 's/release //g'`"
     SA_DIR="/var/log/sa";
     OS_MYSQL=`/usr/libexec/mysqld -V 2>/dev/null | awk '{print $3}'`
-    if ! rpm -qa | grep sysstat >/dev/null 2>/dev/null; then
-      die "The package sysstat is required. Please install and allow to run/gather data before invoking again.";
+    if [ "$CPUSTATS" == "1" -o "$RAMSTATS" == 1 ]; then
+      if ! rpm -qa | grep sysstat >/dev/null 2>/dev/null; then
+        die "The package sysstat is required. Please install and allow to run/gather data before invoking again.";
+      fi
     fi
   elif [ -f /etc/os-release ]; then
     OS_TYPE="coreos";
@@ -53,8 +59,12 @@ function check-prereqs () {
   fi
 
   echo "OS Version       : ${OS_VERSION}";
-  echo "PHP Version      : ${PHP_VERSION}";
-  echo "MySQL Version    : ${MYSQL_VERSION}";
+  if [ "$PHPSTATS" == 1 ]; then
+    echo "PHP Version      : ${PHP_VERSION}";
+  fi
+  if [ "$MYSQLSTATS" == 1 ]; then
+    echo "MySQL Version    : ${MYSQL_VERSION}";
+  fi
 
   if [ "$OS_TYPE" == "unknown" ]; then
     die "This is not a supported Operating System - script requires RedHat derivative, Debian derivative or CoreOS";
@@ -67,6 +77,12 @@ function cpu-stats () {
   if [ "$OS_TYPE" == "coreos" ]; then
     return 0
   fi
+
+  if [ "$CPUSTATS" != 1 ]; then
+    return 0
+  fi
+
+  newline;
 
   CPUCOUNT=`cat /proc/cpuinfo | grep "physical id" | sort | uniq -c | wc -l`;
   if [ $CPUCOUNT -eq 0 ]; then
@@ -107,6 +123,12 @@ function ram-stats () {
     return 0
   fi
 
+  if [ "$RAMSTATS" != 1 ]; then
+    return 0
+  fi
+
+  newline;
+
   ACTUALRAM=`free -m | grep Mem: | awk '{print $2}'`;
   REALRAM=$((($ACTUALRAM + 500)/1024));
   if [ $REALRAM = "0" ] ; then
@@ -133,16 +155,68 @@ function ram-stats () {
 }
 
 function disk-stats () {
+
+  if [ "$DISKSTATS" != 1 ]; then
+    return 0
+  fi
+
+  newline;
+
   echo "Filesystem Usage :";
   df -Pkh 2> /dev/null | egrep -v "none|tmpfs|Mounted" | awk '{printf "   %-20.20s %-10.10s %s used\n",$6,$2,$5}';
 }
 
-newline;
+CPUSTATS=1
+RAMSTATS=1
+DISKSTATS=1
+PHPSTATS=1
+MYSQLSTATS=1
+
+while getopts ":ncrdpm" opt; do
+  case $opt in
+    c)
+      CPUSTATS=1;
+      ;;
+    r)
+      RAMSTATS=1;
+      ;;
+    d)
+      DISKSTATS=1;
+      ;;
+    p)
+      PHPSTATS=1;
+      ;;
+    m)
+      MYSQLSTATS=1;
+      ;;
+    n)
+      CPUSTATS=0;
+      RAMSTATS=0;
+      DISKSTATS=0;
+      PHPSTATS=0;
+      MYSQLSTATS=0;
+      ;;
+    \?)
+      cat <<EOF
+
+Usage: `basename $0 -ncrdpm`"
+      -n turn off the default display (only shows OS) - must be the first option
+         can then be overridden by the options below, e.g. -npm will show only
+         OS, PHP and MySQL (and will skip the sysstat requirement check)
+      -c show CPU stats
+      -r show RAM stats
+      -d show Disk stats
+      -p show PHP version
+      -m show MYSQL version
+
+EOF
+      exit 2
+      ;;
+  esac
+done
+
 check-prereqs;
-newline;
 cpu-stats;
-newline;
 ram-stats;
-newline;
 disk-stats;
 newline;
