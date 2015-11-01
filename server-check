@@ -8,12 +8,12 @@
 
 function die () {
   echo "$(tput setaf 1)Error: ${1}"
-	tput sgr0;
+    tput sgr0;
   exit 1
 }
 
 function newline () {
-	echo ""
+  echo ""
 }
 
 function check-prereqs () {
@@ -35,7 +35,7 @@ function check-prereqs () {
         die "The package sysstat is required. Please install and allow to run/gather data before invoking again.";
       fi
     fi
-	elif [ -f /etc/redhat-release ] ; then
+  elif [ -f /etc/redhat-release ] ; then
     OS_TYPE="redhat";
     OS_VERSION="`cat /etc/redhat-release | sed -e 's/Red Hat Enterprise Linux/RHEL/g' -e 's/release //g'`"
     SA_DIR="/var/log/sa";
